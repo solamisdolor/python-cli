@@ -3,7 +3,7 @@ import inspect
 import commands
 
 
-def is_base(module):
+def is_command(module):
     for base in module.__class__.__bases__:
         if base.__name__ == "base":
             return True
@@ -14,7 +14,7 @@ def get_available_commands():
     clist = []
     for c in inspect.getmembers(commands, inspect.isclass):
         m = getattr(commands, c[0])()
-        if is_base(m) and m.__class__.__name__ != 'base':
+        if is_command(m) and m.__class__.__name__ != 'base':
             clist.append(c)
     return clist
 
