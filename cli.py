@@ -25,9 +25,9 @@ def print_available_commands(clist):
     print("Available commands:")
     print("===================")    
     for c in clist:
-        m = getattr(commands, c[0])()       
-        fargs = inspect.getargspec(m.run)
-        print("{0} {1}".format(m.__class__.__name__, " ".join(map(p,fargs.args))))
+        m = getattr(commands, c[0])()
+        fargs = inspect.signature(m.run).parameters
+        print("{0} {1}".format(m.__class__.__name__, " ".join(map(p,fargs))))
         print("{0: <3}{1}".format(" ", m.__doc__))    
 
 
