@@ -1,5 +1,5 @@
 from .base import base
-from .common import common
+from ._common import _common
 
 class get(base):
     """Get property value"""
