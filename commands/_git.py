@@ -92,3 +92,11 @@ class _git(object):
     def config(self):
         result = self._execgit("git config --global http.sslVerify false")
        
+    
+    def is_no_change(self):
+        os.chdir(self.repo_dir)                
+        cmd = "git diff  --exit-code"
+        os.chdir(self.repo_dir)
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        stdout, stderr = p.communicate()
+        return p.returncode == 0 # True == no change
