@@ -1,4 +1,6 @@
 import os
+import stat
+import shutil
 import subprocess
 
 
@@ -8,69 +10,68 @@ class _git(object):
     def __init__(self, repo_uri, working_dir, user=None, pwd=None):
         self.repo_uri = repo_uri
         self.working_dir = working_dir
-        self.repo_dir = self.working_dir + "/repo"
+        self.repo_folder_name = "repo"
+        self.repo_dir = "{0}/{1}".format(self.working_dir, self.repo_folder_name)
         self.user = user
         self.pwd = pwd
 
 
-    def clone(self):
-        os.chdir(self.working_dir)
-        subprocess.call(["git", "clone", self.repo_uri, "repo"], shell=True)
-        
-
-    def status(self):
-        print (self.repo_dir)
-        os.chdir(self.repo_dir)
-        cmd = "git status"
+    def _execgit(self, cmd):
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         stdout, stderr = p.communicate()
+        if p.returncode != 0:
+            raise ValueError('Error git exec: {0}. {1}'.format(cmd, stderr.decode("utf-8")))
         return stdout.decode("utf-8")
+
+    def execgit(self, cmd):
+        os.chdir(self.repo_dir)        
+        return self._execgit(cmd)
+
+
+    def clone(self):
+        cmd = "git clone {0} {1}".format(self.repo_uri, self.repo_folder_name)
+        os.chdir(self.working_dir)                
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        stdout, stderr = p.communicate()
+        if p.returncode != 0:
+            raise ValueError('Error git exec: {0}. {1}'.format(cmd, stderr.decode("utf-8")))
+        return stdout.decode("utf-8")
+
+
+    def force_clean(self):
+        """indiscriminately remove all contents under repo_dir"""   
+        def remove_readonly(func, path, _):
+            """Clear the readonly bit and reattempt the removal"""
+            os.chmod(path, stat.S_IWRITE)
+            func(path)     
+        if os.path.exists(self.repo_dir):
+            shutil.rmtree(self.repo_dir, onerror=remove_readonly)
+
+
+    def status(self):        
+        return self.execgit("git status")
 
 
     def pull(self):        
-        os.chdir(self.repo_dir)
-        cmd = "git pull origin"
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        stdout, stderr = p.communicate()        
-        return stdout.decode("utf-8")
+        return self.execgit("git pull origin")
 
         
     def checkout(self, branch):
-        os.chdir(self.repo_dir)
-        cmd = "git checkout {0}".format(branch)
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        stdout, stderr = p.communicate()
-        return stdout.decode("utf-8")
+        return self.execgit("git checkout {0}".format(branch))
+
 
     def push(self):
-        os.chdir(self.repo_dir)
-        cmd = "git push origin"
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        stdout, stderr = p.communicate()        
-        if len(stderr) > 0:
-            pass
-            #TODO: need to filter out the typical git non-error msgs from stderr
-        return stdout.decode("utf-8")
+        return self.execgit("git push origin".format(branch))
+
     
     def add(self):
-        os.chdir(self.repo_dir)
-        cmd = "git add ."
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        stdout, stderr = p.communicate()        
-        return stdout.decode("utf-8")
+        return self.execgit("git add .")
+
 
     def commit(self, comment):
-        os.chdir(self.repo_dir)
-        cmd = "git commit -m {0}".format(comment)
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        stdout, stderr = p.communicate()        
-        return stdout.decode("utf-8")
+        return self.execgit("git commit -m {0}".format(comment))
+
 
     def config(self):
-        os.chdir(self.repo_dir)
-        cmd = "git config --global http.sslVerify false"
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        stdout, stderr = p.communicate()        
-        print (stderr)
-        return stdout.decode("utf-8")
-        
+        result = self._execgit("git config --global http.sslVerify false")
+       
