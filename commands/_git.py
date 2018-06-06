@@ -23,6 +23,7 @@ class _git(object):
             raise ValueError('Error git exec: {0}. {1}'.format(cmd, stderr.decode("utf-8")))
         return stdout.decode("utf-8")
 
+
     def execgit(self, cmd):
         os.chdir(self.repo_dir)        
         return self._execgit(cmd)
@@ -34,7 +35,7 @@ class _git(object):
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         stdout, stderr = p.communicate()
         if p.returncode != 0:
-            raise ValueError('Error git exec: {0}. {1}'.format(cmd, stderr.decode("utf-8")))
+            raise ValueError('Error git exec: {0}. {1}\n{2}'.format(cmd, stdout.decode("utf-8"), stderr.decode("utf-8")))
         return stdout.decode("utf-8")
 
 
@@ -56,20 +57,36 @@ class _git(object):
         return self.execgit("git pull origin")
 
         
-    def checkout(self, branch):
-        return self.execgit("git checkout {0}".format(branch))
+    def checkout(self, branch_name):
+        return self.execgit("git checkout {0}".format(branch_name))
 
 
     def push(self):
-        return self.execgit("git push origin".format(branch))
+        return self.execgit("git push origin")
 
-    
+
+    def push_branch(self, branch_name):
+        return self.execgit("git push -u origin {0}".format(branch_name))
+
+
     def add(self):
         return self.execgit("git add .")
 
 
     def commit(self, comment):
         return self.execgit("git commit -m {0}".format(comment))
+
+
+    def branch(self, branch_name):
+        return self.execgit("git checkout -b {0}".format(branch_name))
+
+
+    def is_branch_exists(self, branch_name):
+        cmd = "git rev-parse --verify remotes/origin/{0}".format(branch_name)
+        os.chdir(self.repo_dir)
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        stdout, stderr = p.communicate()
+        return p.returncode == 0 # True == exists
 
 
     def config(self):
