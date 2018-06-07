@@ -91,7 +91,7 @@ class _git(object):
 
 
     def config(self):
-        result = self._execgit("git config --global http.sslVerify false")
+        return self._execgit("git config --global http.sslVerify false")
        
     
     def is_no_change(self):
