@@ -82,8 +82,8 @@ class _git(object):
 
 
     def is_branch_exists(self, branch_name):
-        cmd = "git rev-parse --verify remotes/origin/{0}".format(branch_name)
-        os.chdir(self.repo_dir)
+        os.chdir(self.repo_dir)                
+        cmd = "git rev-parse --verify remotes/origin/{0}".format(branch_name)        
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         stdout, stderr = p.communicate()
         return p.returncode == 0 # True == exists
@@ -95,8 +95,15 @@ class _git(object):
     
     def is_no_change(self):
         os.chdir(self.repo_dir)                
-        cmd = "git diff  --exit-code"
-        os.chdir(self.repo_dir)
+        cmd = "git diff  --exit-code"        
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         stdout, stderr = p.communicate()
         return p.returncode == 0 # True == no change
+        
+
+    def is_no_untracked(self):
+        os.chdir(self.repo_dir)                
+        cmd = "git ls-files -o"
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        stdout, stderr = p.communicate()
+        return len(stdout) == 0 # True== no untracked files
