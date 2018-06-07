@@ -1,5 +1,6 @@
 import os
 import stat
+import ntpath
 import shutil
 import subprocess
 
@@ -10,7 +11,7 @@ class _git(object):
     def __init__(self, repo_uri, working_dir, user=None, pwd=None):
         self.repo_uri = repo_uri
         self.working_dir = working_dir
-        self.repo_folder_name = "repo"
+        self.repo_folder_name = "repo_{0}".format(ntpath.basename(repo_uri))
         self.repo_dir = "{0}/{1}".format(self.working_dir, self.repo_folder_name)
         self.user = user
         self.pwd = pwd
