@@ -21,3 +21,6 @@ class plgatetest(base):
 
         print (gate_override.dumps())
         print (gate_override.checksum())
+        s = gate_override.dumpbase64()
+        print (s)
+        print (_plgate.loadbase64(s))

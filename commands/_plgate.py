@@ -1,4 +1,5 @@
 import json
+import base64
 import hashlib
 import datetime
 from urllib.parse import urlencode
@@ -10,8 +11,8 @@ class gateID(object):
 class _plgate(object):
     """A gate"""
     
-    def __init__(self, id, value):
-        self.id = id
+    def __init__(self, gate_id, value):
+        self.id = gate_id
         self.value = value
         self.dtstamp = self.get_date_stamp()
 
@@ -19,9 +20,17 @@ class _plgate(object):
         return datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S.%f") 
 
     def dumps(self):
-        #s =  "|".join("{}.{}".format(key,val) for (key,val) in self.__dict__.items())        
-        s = urlencode(self.__dict__)
+        # s =  "|".join("{}.{}".format(key,val) for (key,val) in self.__dict__.items())
+        # s = urlencode(self.__dict__)
+        s = json.dumps(self.__dict__)
         return s
+
+    def dumpbase64(self):
+        return base64.urlsafe_b64encode(self.dumps().encode("utf-8"))
+
+    @staticmethod
+    def loadbase64(string):
+        return base64.urlsafe_b64decode(string)
 
     def checksum(self):
         return hashlib.sha256(self.dumps().encode("utf-8")).hexdigest()
@@ -37,7 +46,7 @@ class _plgate(object):
         s += "{}_CHKSUM={}".format(self.id, self.checksum())
         return s
 
-    def from_artifactory_string(self):
+    def from_artifactory_json(self):
         #TODO
         pass
 
@@ -46,8 +55,8 @@ class _plgate(object):
 class _plgateOverride(_plgate):
     """An override"""
 
-    def __init__(self, id, value, made_by):
-        super(_plgateOverride, self).__init__(id, value)
-        self.made_by = made_by
+    def __init__(self, gate_id, value, by):
+        super(_plgateOverride, self).__init__(gate_id, value)
+        self.by = by
 
     
