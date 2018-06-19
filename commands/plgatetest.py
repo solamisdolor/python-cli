@@ -8,7 +8,20 @@ class plgatetest(base):
     @staticmethod
     def run():
         # plgatetest.simulate_actual()
-        plgatetest.test_old_pickle()
+        # plgatetest.test_old_pickle()
+        plgatetest.test_loads()
+
+    @staticmethod
+    def test_loads():
+        gate: _plgate
+        saved_pickle = "gANjY29tbWFuZHMuX3BsZ2F0ZQpfcGxnYXRlCnEAKYFxAX1xAihYAgAAAGlkcQNYEAAAAFBMR0FURV9URVNUX1JFR1JxBFgFAAAAdmFsdWVxBYlYAgAAAGJ5cQZYBgAAAHN5c3RlbXEHWAcAAABkdHN0YW1wcQhYGgAAADIwMTguMDYuMTkuMTcuNTcuMTYuNzQ5OTY0cQl1YlhAAAAAN2Y3NDdlNzA0NTdlMTk4OTk5NjA0ZDAzZmZmZmJjMThjNmNiYzdmMDYwZmJlZDA4MzExMzlhZGI5ZTZjZDFjMHEKhnELLg=="
+        gate = _plgate.loads(saved_pickle)
+        print(gate.dump_pretty())
+
+        saved_pickle = "gANjY29tbWFuZHMuX3BsZ2F0ZQpfcGxnYXRlT3ZlcnJpZGUKcQApgXEBfXECKFgCAAAAaWRxA1gQAAAAUExHQVRFX1RFU1RfUkVHUnEEWAUAAAB2YWx1ZXEFiFgCAAAAYnlxBlgKAAAAQWxsIE1pZ2h0eXEHWAcAAABkdHN0YW1wcQhYGgAAADIwMTguMDYuMTkuMTcuNTcuMTYuNzUwMjQ4cQl1YlhAAAAAMWJiMTVmNGYxMTM4ZmZjN2E5YjMxMTJjYTc1NWYzMDlmMzc2YzlkMjZiNDMyMTIwMjhiNzViMmVjN2MxMDNmYXEKhnELLg=="
+        gate = _plgate.loads(saved_pickle)
+        print(gate.dump_pretty())
+
 
     @staticmethod
     def test_old_pickle():
@@ -18,7 +31,7 @@ class plgatetest(base):
         saved_gate, chksum = _plgate.load_pickles_64(saved_pickle)
         saved_override_gate, chksumovr = _plgate.load_pickles_64(saved_override_pickle)
 
-        print(saved_gate.dumps())
+        print(saved_gate.dump_jsons())
 
         pass
 
