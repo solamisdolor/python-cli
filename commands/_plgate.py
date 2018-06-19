@@ -30,20 +30,18 @@ class _plgate(object):
     def dumps(self):
         return json.dumps(self.__dict__)
 
-    def pickles_64(self):
+    def pickles_64(self) -> str:
         """returns url-safe base64-encoded pickle of a tuple of (gate, gate.checksum)"""
         the_tuple = (self, self.checksum())
         b = pickle.dumps(the_tuple)
         return base64.urlsafe_b64encode(b).decode("utf-8")
 
     @staticmethod
-    def load_pickles_64(string):
+    def load_pickles_64(string) -> tuple:
         """returns a tuple of (gate, gate.checksum) from a base64-encoded pickle"""
         b = base64.urlsafe_b64decode(string.encode("utf-8"))
         the_tuple = pickle.loads(b)
-        if _plgate.is_valid_checksum(the_tuple[0], the_tuple[1]):
-            print("checksum validated OK")
-        else:
+        if not _plgate.is_valid_checksum(the_tuple[0], the_tuple[1]):
             print("checksum invalid!!")
         return the_tuple
 
@@ -71,7 +69,7 @@ class _plgateOverride(_plgate):
         s = super().to_art_string(prefix="_")
         return s
 
-def get_gate(gate_id, repokey, itempath):
+def get_gates(gate_id, repokey, itempath):
     # 1. fetch property gate_id from artifactory/repokey/itempath
     # 2. load
 
@@ -91,4 +89,8 @@ def get_gate(gate_id, repokey, itempath):
 
     return gate, gate_ovr
 
-
+def save_gate(gate: _plgate, repokey, itempath):
+    """Save gate"""
+    print("saving gate {0}".format(gate.id))
+    return gate.pickles_64()
+    # TODO: actually implement this.
