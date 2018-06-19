@@ -2,55 +2,61 @@ import json
 import base64
 import hashlib
 import datetime
-from urllib.parse import urlencode
+import pickle
 
-class gateID(object):
-    TEST_REGR="TEST_REGR"
-    PWD_SCREENING="PWD_SCREENING"
+
+class GateID(object):
+    PLGATE_TEST_REGR = "PLGATE_TEST_REGR"
+    PLGATE_PWD_SCREENING = "PLGATE_PWD_SCREENING"
+    PLGATE_STAGING_SIGNOFF = "PLGATE_STAGING_SIGNOFF"
+
 
 class _plgate(object):
     """A gate"""
     
-    def __init__(self, gate_id, value):
+    def __init__(self, gate_id, value, by):
         self.id = gate_id
         self.value = value
-        self.dtstamp = self.get_date_stamp()
+        self.by = by
+        self.dtstamp = _plgate.get_date_stamp()
 
-    def get_date_stamp(self):
+    @staticmethod
+    def get_date_stamp():
         return datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S.%f") 
 
+    def is_passed(self):
+        return True if self.value is True else False
+
     def dumps(self):
-        # s =  "|".join("{}.{}".format(key,val) for (key,val) in self.__dict__.items())
-        # s = urlencode(self.__dict__)
-        s = json.dumps(self.__dict__)
-        return s
+        return json.dumps(self.__dict__)
 
-    def dumpbase64(self):
-        return base64.urlsafe_b64encode(self.dumps().encode("utf-8"))
+    def pickles_64(self):
+        """returns url-safe base64-encoded pickle of a tuple of (gate, gate.checksum)"""
+        the_tuple = (self, self.checksum())
+        b = pickle.dumps(the_tuple)
+        return base64.urlsafe_b64encode(b).decode("utf-8")
 
-    def loadbase64(self, string):
-        s = base64.urlsafe_b64decode(string).decode("utf-8")
-        self.__dict__ = json.loads(s)
+    @staticmethod
+    def load_pickles_64(string):
+        """returns a tuple of (gate, gate.checksum) from a base64-encoded pickle"""
+        b = base64.urlsafe_b64decode(string.encode("utf-8"))
+        the_tuple = pickle.loads(b)
+        if _plgate.is_valid_checksum(the_tuple[0], the_tuple[1]):
+            print("checksum validated OK")
+        else:
+            print("checksum invalid!!")
+        return the_tuple
+
+    @staticmethod
+    def is_valid_checksum(gate, checksum):
+        return True if gate.checksum() == checksum else False
 
     def checksum(self):
         return hashlib.sha256(self.dumps().encode("utf-8")).hexdigest()
 
     def to_art_string(self, prefix=""):
         s = "properties="
-        s += "{}{}={}".format(prefix, self.id, self.dumpbase64())
-        s += ";{}{}_CHKSUM={}".format(prefix, self.id, self.checksum())
-        return s
-
-
-    def old_to_artifactory_string(self, prefix="", postfix=""):
-        """
-        /api/storage/{repoKey}/{itemPath}?properties=p1=v1[,v2][|p2=v3][&recursive=1]
-        Returns the querystring part
-        """
-        s = "properties="
-        s += "{}{}{}={}".format(prefix, self.id, postfix, self.value)
-        s += ";{}{}_DTSTAMP{}={}".format(prefix, self.id, postfix, self.dtstamp)
-        s += ";{}{}_CHKSUM{}={}".format(prefix, self.id, postfix, self.checksum())
+        s += "{}{}={}".format(prefix, self.id, self.pickles_64())
         return s
 
     def from_artifactory_json(self):
@@ -58,20 +64,31 @@ class _plgate(object):
         pass
 
 
-
 class _plgateOverride(_plgate):
     """An override"""
-
-    def __init__(self, gate_id=None, value=None, by=None):
-        super(_plgateOverride, self).__init__(gate_id, value)
-        self.by = by
-
 
     def to_art_string(self):
         s = super().to_art_string(prefix="_")
         return s
 
-    def old_to_artifactory_string(self):
-        s = super().to_artifactory_string(prefix="_")
-        return s + ";{}{}_BY{}_{}".format("_", self.id, "", self.by)
+def get_gate(gate_id, repokey, itempath):
+    # 1. fetch property gate_id from artifactory/repokey/itempath
+    # 2. load
+
+    # TODO: replace below with actual value from Artifactory
+    property_value = "gANjY29tbWFuZHMuX3BsZ2F0ZQpfcGxnYXRlCnEAKYFxAX1xAihYAgAAAGlkcQNYCQAAAFRFU1RfUkVHUnEEWAUAAAB2YWx1ZXEFWAQAAABwYXNzcQZYAgAAAGJ5cQdYBgAAAHN5c3RlbXEIWAcAAABkdHN0YW1wcQlYGgAAADIwMTguMDYuMTkuMTMuNTQuNTkuMTkwMDY1cQp1YlhAAAAAZjYzMzhlNmJiYTQ4YzI3OWFiMWVmZWQ2ZDdjMzZhYjExYTM2Y2Q4MzI3ZDJlMGM2MmE2NjFlZDZkZDE2ZmIzOHELhnEMLg=="
+    gate, checksum = _plgate.load_pickles_64(property_value)
+    if not gate.checksum() == checksum:
+        raise ValueError("checksum is invalid!!")
+
+    # 3. find overrides
+
+    # TODO: fetch property _gate_id from Artifactory
+    property_value = "gANjY29tbWFuZHMuX3BsZ2F0ZQpfcGxnYXRlT3ZlcnJpZGUKcQApgXEBfXECKFgCAAAAaWRxA1gJAAAAVEVTVF9SRUdScQRYBQAAAHZhbHVlcQVYBAAAAGZhaWxxBlgCAAAAYnlxB1gIAAAAVGhlIGJvc3NxCFgHAAAAZHRzdGFtcHEJWBoAAAAyMDE4LjA2LjE5LjE0LjIwLjAzLjE4ODg2MHEKdWJYQAAAAGNhZmM3NzQxMmMxMzNjNzIxNDE1ZDljODY5OTNjOTcyYWQyNzJlMThkNmE0N2Q2YzY4MGJlODMyMGZlNTc5ZDFxC4ZxDC4="
+    gate_ovr, checksum_ovr = _plgate.load_pickles_64(property_value)
+    if not gate_ovr.checksum() == checksum_ovr:
+        raise ValueError("checksum is invalid!!")
+
+    return gate, gate_ovr
+
 
