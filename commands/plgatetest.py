@@ -1,15 +1,43 @@
 from .base import base
-from ._plgate import _plgate, _plgateOverride, GateID, get_gates, save_gate
+from ._plgate import _plgate, _plgateOverride, GateID
+from ._plgate_api import get_gates, save_gate, load_consolidated_gate, load_gate
 
-
-class plgatetest(base):
+class plgate(base):
     """plgate test"""
     
     @staticmethod
     def run():
-        # plgatetest.simulate_actual()
-        # plgatetest.test_old_pickle()
-        plgatetest.test_loads()
+        # plgate.simulate_actual()
+        # plgate.test_old_pickle()
+        # plgate.test_loads()
+        plgate.test_save()
+        # plgate.test_load()
+        plgate.test_save_ovr()
+        plgate.test_load_consolidated()
+
+    @staticmethod
+    def test_load_consolidated():
+        gate = load_consolidated_gate(GateID.PLGATE_TEST_REGR, 'local-ing-lendfast-pipeline-release', '646', 'bobthebuilder', 'dizzysc00p')
+        print(gate.dump_pretty())
+        print(gate.dump_jsons())
+        print(gate)
+
+    @staticmethod
+    def test_load():
+        gate: _plgate
+        gate = load_gate(GateID.PLGATE_TEST_REGR, 'local-ing-lendfast-pipeline-release', '646', 'bobthebuilder', 'dizzysc00p')
+        print(gate.dump_pretty())
+
+    @staticmethod
+    def test_save():
+        gate: _plgate
+        gate = _plgate(GateID.PLGATE_TEST_REGR, False, "system")
+        save_gate(gate, 'local-ing-lendfast-pipeline-release', '646', 'bobthebuilder', 'dizzysc00p')
+
+    @staticmethod
+    def test_save_ovr():
+        gate_ovr = _plgateOverride(GateID.PLGATE_TEST_REGR, False, "Mr Big Shot")
+        save_gate(gate_ovr, 'local-ing-lendfast-pipeline-release', '646', 'bobthebuilder', 'dizzysc00p')
 
     @staticmethod
     def test_loads():
@@ -21,7 +49,6 @@ class plgatetest(base):
         saved_pickle = "gANjY29tbWFuZHMuX3BsZ2F0ZQpfcGxnYXRlT3ZlcnJpZGUKcQApgXEBfXECKFgCAAAAaWRxA1gQAAAAUExHQVRFX1RFU1RfUkVHUnEEWAUAAAB2YWx1ZXEFiFgCAAAAYnlxBlgKAAAAQWxsIE1pZ2h0eXEHWAcAAABkdHN0YW1wcQhYGgAAADIwMTguMDYuMTkuMTcuNTcuMTYuNzUwMjQ4cQl1YlhAAAAAMWJiMTVmNGYxMTM4ZmZjN2E5YjMxMTJjYTc1NWYzMDlmMzc2YzlkMjZiNDMyMTIwMjhiNzViMmVjN2MxMDNmYXEKhnELLg=="
         gate = _plgate.loads(saved_pickle)
         print(gate.dump_pretty())
-
 
     @staticmethod
     def test_old_pickle():
