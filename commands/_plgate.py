@@ -16,13 +16,27 @@ class InvalidChecksumError(Exception):
 
 
 class _plgate(object):
-    """A gate"""
+    """A gate.
+
+    Args:
+        gate_id (str): ID of the Gate. Should be from GateID attributes.
+        value (bool): Value of the Gate. Should be True/False.
+        by (str): User/service name associated with this change.
+
+    Attributes:
+        id (str): ID of the Gate.
+        value (bool): Value of the Gate.
+        by (str): User/service name associated with this change.
+        dtstamp (str): Dynamically created string representation of date time stamp.
+        links ([]): List of objects linked to this gate.
+    """
     
     def __init__(self, gate_id, value, by):
         self.id = gate_id
         self.value = value
         self.by = by
         self.dtstamp = _plgate._get_date_stamp()
+        self.links = [] # set this just before saving to storage
 
     @staticmethod
     def _date_fmt():
@@ -38,7 +52,7 @@ class _plgate(object):
     def dump_pretty(self):
         dt = datetime.datetime.strptime(self.dtstamp, _plgate._date_fmt())
         dt_str = dt.strftime("%A %d %B %Y, %I:%M %p ")
-        return "Gate {} is set to {} by {} on {}".format(self.id, self.value, self.by, dt_str)
+        return "Gate {} is set to {} by {} on {} for {}".format(self.id, self.value, self.by, dt_str, self.links)
 
     def dump_jsons(self):
         return json.dumps(self.__dict__)
@@ -75,14 +89,12 @@ class _plgate(object):
     def checksum(self):
         return hashlib.sha256(self.dump_jsons().encode("utf-8")).hexdigest()
 
-    def to_art_string(self, prefix=""):
-        s = "properties="
-        s += "{}{}={}".format(prefix, self.id, self.pickles_64())
-        return s
+    def storage_key(self):
+        """use this to represent the gate's identity when storing in a DB"""
+        return self.id
 
-    def from_artifactory_json(self):
-        #TODO: implement this
-        pass
+    def storage_value(self):
+        return self.dumps()
 
 
 class _plgateOverride(_plgate):
@@ -96,30 +108,5 @@ class _plgateOverride(_plgate):
         s = super().dump_pretty()
         return "[OVERRIDE] {}".format(s)
 
-
-def get_gates(gate_id, repokey, itempath):
-    # 1. fetch property gate_id from artifactory/repokey/itempath
-    # 2. load
-
-    # TODO: replace below with actual value from Artifactory
-    property_value = "gANjY29tbWFuZHMuX3BsZ2F0ZQpfcGxnYXRlCnEAKYFxAX1xAihYAgAAAGlkcQNYCQAAAFRFU1RfUkVHUnEEWAUAAAB2YWx1ZXEFWAQAAABwYXNzcQZYAgAAAGJ5cQdYBgAAAHN5c3RlbXEIWAcAAABkdHN0YW1wcQlYGgAAADIwMTguMDYuMTkuMTMuNTQuNTkuMTkwMDY1cQp1YlhAAAAAZjYzMzhlNmJiYTQ4YzI3OWFiMWVmZWQ2ZDdjMzZhYjExYTM2Y2Q4MzI3ZDJlMGM2MmE2NjFlZDZkZDE2ZmIzOHELhnEMLg=="
-    gate = _plgate.loads(property_value)
-
-    # 3. find overrides
-
-    # TODO: fetch property _gate_id from Artifactory
-    property_value = "gANjY29tbWFuZHMuX3BsZ2F0ZQpfcGxnYXRlT3ZlcnJpZGUKcQApgXEBfXECKFgCAAAAaWRxA1gJAAAAVEVTVF9SRUdScQRYBQAAAHZhbHVlcQVYBAAAAGZhaWxxBlgCAAAAYnlxB1gIAAAAVGhlIGJvc3NxCFgHAAAAZHRzdGFtcHEJWBoAAAAyMDE4LjA2LjE5LjE0LjIwLjAzLjE4ODg2MHEKdWJYQAAAAGNhZmM3NzQxMmMxMzNjNzIxNDE1ZDljODY5OTNjOTcyYWQyNzJlMThkNmE0N2Q2YzY4MGJlODMyMGZlNTc5ZDFxC4ZxDC4="
-    gate_ovr = _plgate.loads(property_value)
-    
-    return gate, gate_ovr
-
-def save_gate(gate: _plgate, repokey, itempath):
-    """Save gate"""
-    print("saving gate {0}".format(gate.id))
-    return gate.pickles_64()
-    # TODO: actually implement this.
-
-def reset_gate(gate_id, repokey, itempath):
-    """Deletes the gate for the specified repokey and itempath"""
-    print("deleting gate {0}".format(gate_id))
-    # TODO: actually implement this.
+    def storage_key(self):
+        return "_" + super().storage_key()
