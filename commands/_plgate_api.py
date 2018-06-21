@@ -1,5 +1,4 @@
 from ._plgate import _plgate, _plgateOverride
-from ._artifactory import _artifactory
 from requests import exceptions
 
 

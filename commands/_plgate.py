@@ -116,3 +116,33 @@ class _plgateOverride(_plgate):
     def storage_key(self):
         return "_" + super().storage_key()
 
+class _summarizer(object):
+    """Tool to summarize a list of gates"""
+
+    def __init__(self, gates: []):
+        self.gates = [] if gates is None else gates
+
+    def dump_pretty(self):
+        i: _plgate
+        s = ""
+        for i in self.gates:
+            s += "{}\n".format(i.dump_pretty())
+        return s
+
+    def is_passed(self):
+        i: _plgate
+        passed = True
+        for i in self.gates:
+            temp = i.is_passed()
+            passed = passed and temp
+        return passed
+
+    def filter(self, status):
+        if status in [True, "True", "true"]:
+            filter_status = True
+        elif status in [False, "False", "false"]:
+            filter_status = False
+        else:
+            raise ValueError("Unexpected status value/type")
+        filtered = [i for i in self.gates if i.is_passed() == filter_status]
+        return filtered

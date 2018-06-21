@@ -1,6 +1,5 @@
 from .base import base
-from ._plgate import _plgate, _plgateOverride, GateID
-from ._plgate_api import get_gates, save_gate, load_consolidated_gate, load_gate
+from ._plgate import _plgate, _plgateOverride, GateID, _summarizer
 
 class plgate(base):
     """plgate test"""
@@ -9,11 +8,38 @@ class plgate(base):
     def run():
         # plgate.simulate_actual()
         # plgate.test_old_pickle()
-        # plgate.test_loads()
-        plgate.test_save()
-        # plgate.test_load()
-        plgate.test_save_ovr()
-        plgate.test_load_consolidated()
+        # plgate.test_summarize()
+        plgate.test_custom()
+
+    @staticmethod
+    def test_custom():
+        class custom(_plgate):
+            def is_passed(self):
+                return True if 70 <= self.value <= 80 else False
+
+        gates = []
+        gates.append(_plgate(GateID.PLGATE_PWD_SCREENING, True, "system"))
+        gates.append(custom(GateID.PLGATE_STAGING_SIGNOFF, 81, "system"))
+
+        sum = _summarizer(gates)
+        print(sum.is_passed())
+
+        print([i.id for i in sum.filter(True)])
+        print([i.id for i in sum.filter(False)])
+
+
+    @staticmethod
+    def test_summarize():
+        gates = []
+        gates.append(_plgate(GateID.PLGATE_TEST_REGR, True, "system"))
+        gates.append(_plgate(GateID.PLGATE_PRE_PROD_SIGNOFF, False, "system"))
+        gates.append(_plgate(GateID.PLGATE_PWD_SCREENING, True, "system"))
+
+        summarizer = _summarizer(gates)
+        print(summarizer.dump_pretty())
+        print(summarizer.is_passed())
+        print([i.id for i in summarizer.filter(True)])
+        print([i.id for i in summarizer.filter(False)])
 
     @staticmethod
     def test_load_consolidated():
