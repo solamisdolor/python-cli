@@ -9,6 +9,7 @@ class GateID(object):
     PLGATE_TEST_REGR = "PLGATE_TEST_REGR"
     PLGATE_PWD_SCREENING = "PLGATE_PWD_SCREENING"
     PLGATE_STAGING_SIGNOFF = "PLGATE_STAGING_SIGNOFF"
+    PLGATE_PRE_PROD_SIGNOFF = "PLGATE_PRE_PROD_SIGNOFF"
 
 
 class InvalidChecksumError(Exception):
@@ -47,7 +48,7 @@ class _plgate(object):
         return datetime.datetime.now().strftime(_plgate._date_fmt())
 
     def is_passed(self):
-        return True if self.value is True else False
+        return True if self.value in [True, "True", "true"] else False
 
     def dump_pretty(self):
         dt = datetime.datetime.strptime(self.dtstamp, _plgate._date_fmt())
@@ -100,6 +101,10 @@ class _plgate(object):
 class _plgateOverride(_plgate):
     """An override"""
 
+    def __init__(self, gate_id, value, by):
+        super().__init__(gate_id, value, by)
+        self.is_override = True
+
     def to_art_string(self):
         s = super().to_art_string(prefix="_")
         return s
@@ -110,3 +115,4 @@ class _plgateOverride(_plgate):
 
     def storage_key(self):
         return "_" + super().storage_key()
+
